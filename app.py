@@ -91,6 +91,10 @@ PAYMENT_METHODS = [
 if "inventory" not in st.session_state:
     st.session_state.inventory = pd.DataFrame(INITIAL_INVENTORY)
 
+# Cart state for multi-item checkout
+if "pos_cart" not in st.session_state:
+    st.session_state.pos_cart = []
+
 if "sales_history" not in st.session_state:
     # Pre-populating sample sales data across different weeks for demonstration
     sample_sales = [
@@ -113,75 +117,117 @@ if "expenses" not in st.session_state:
     st.session_state.expenses = pd.DataFrame(sample_expenses)
 
 # ==========================================
-# APP HEADER & NAVIGATION
-# ==========================================
-st.markdown('<div class="main-header">🌿 Royal Vine Sales & Inventory</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Point of Sale, Stock Tracking & Profit Intelligence (BWP)</div>', unsafe_allow_html=True)
-
-menu = ["🛒 Record Sale", "📦 Inventory List", "🚚 Stock Refill", "💸 Expenses & Operational Costs", "📊 Weekly & Monthly Insights", "📜 Transaction History", "🚀 Deploy to GitHub & Streamlit"]
-choice = st.sidebar.selectbox("Navigation Menu", menu)
-
-# ==========================================
-# MODULE 1: RECORD SALE
+# MODULE 1: RECORD SALE (MULTI-ITEM CART)
 # ==========================================
 if choice == "🛒 Record Sale":
-    st.subheader("Record New Sale")
+    st.subheader("Record New Sale (Multi-Item Order)")
     
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([1.5, 1])
     
     with col1:
-        sale_date = st.date_input("Sale Date", datetime.date.today())
-        
-        # Available items with stock > 0 highlighted
+        st.markdown("### 1. Add Varieties to Order Cart")
         inv_df = st.session_state.inventory
         item_options = inv_df["Item"].tolist()
         
-        selected_item = st.selectbox("Select Item", item_options)
-        
-        # Fetch item details
-        item_row = inv_df[inv_df["Item"] == selected_item].iloc[0]
-        current_stock = int(item_row["Quantity"])
-        item_price = float(item_row["Price_BWP"])
-        item_cost = float(item_row["Cost_BWP"])
-        
-        st.info(f"**Current Stock:** {current_stock} units | **Unit Price:** BWP {item_price:.2f}")
-        
-        sale_qty = st.number_input("Quantity Sold", min_value=1, max_value=max(1, current_stock), value=1, step=1)
-        
+        c_item, c_qty, c_btn = st.columns([3, 2, 2])
+        with c_item:
+            selected_item = st.selectbox("Select Item Variety", item_options)
+            item_row = inv_df[inv_df["Item"] == selected_item].iloc[0]
+            current_stock = int(item_row["Quantity"])
+            item_price = float(item_row["Price_BWP"])
+            item_cost = float(item_row["Cost_BWP"])
+            st.caption(f"Stock: **{current_stock}** | Unit Price: **BWP {item_price:.2f}**")
+            
+        with c_qty:
+            sale_qty = st.number_input("Quantity", min_value=1, max_value=max(1, current_stock), value=1, step=1)
+            
+        with c_btn:
+            st.write("") # Alignment spacing
+            st.write("")
+            if st.button("➕ Add to Cart", use_container_width=True):
+                if current_stock < sale_qty:
+                    st.error("Insufficient stock!")
+                else:
+                    # Check if item already in cart
+                    existing_item = next((item for item in st.session_state.pos_cart if item["Item"] == selected_item), None)
+                    if existing_item:
+                        if (existing_item["Quantity"] + sale_qty) > current_stock:
+                            st.error(f"Cannot exceed available stock ({current_stock}).")
+                        else:
+                            existing_item["Quantity"] += sale_qty
+                            existing_item["Total_Price"] = existing_item["Quantity"] * item_price
+                            existing_item["Total_Cost"] = existing_item["Quantity"] * item_cost
+                            st.success(f"Updated {selected_item} quantity in cart!")
+                    else:
+                        st.session_state.pos_cart.append({
+                            "Item": selected_item,
+                            "Quantity": sale_qty,
+                            "Price_BWP": item_price,
+                            "Cost_BWP": item_cost,
+                            "Total_Price": sale_qty * item_price,
+                            "Total_Cost": sale_qty * item_cost
+                        })
+                        st.success(f"Added {selected_item} to cart!")
+
+    with col2:
+        st.markdown("### 2. Order Summary & Checkout")
+        sale_date = st.date_input("Sale Date", datetime.date.today())
         payment_method = st.selectbox("Payment Method", PAYMENT_METHODS)
         
-        total_price = sale_qty * item_price
-        total_cost = sale_qty * item_cost
-        estimated_profit = total_price - total_cost
-        
-    with col2:
-        st.markdown("### Sale Summary")
-        st.markdown(f"**Item:** {selected_item}")
-        st.markdown(f"**Quantity:** {sale_qty}")
-        st.markdown(f"**Total Revenue:** `BWP {total_price:.2f}`")
-        st.markdown(f"**Estimated Margin:** `BWP {estimated_profit:.2f}`")
-        st.markdown(f"**Payment:** {payment_method}")
-        
-        if current_stock <= 0:
-            st.error("⚠️ Item is Out of Stock! Please refill inventory before selling.")
+        if len(st.session_state.pos_cart) == 0:
+            st.info("🛒 Your order cart is empty. Add items from the left to start.")
         else:
-            if st.button("✅ Complete & Process Sale", use_container_width=True, type="primary"):
-                # Deduct inventory
-                st.session_state.inventory.loc[st.session_state.inventory["Item"] == selected_item, "Quantity"] -= sale_qty
-                
-                # Append to Sales History
-                new_sale = {
-                    "Date": sale_date,
-                    "Item": selected_item,
-                    "Quantity": sale_qty,
-                    "Price_BWP": item_price,
-                    "Total_BWP": total_price,
-                    "Cost_BWP": total_cost,
-                    "Profit_BWP": estimated_profit,
-                    "Payment_Method": payment_method
+            cart_df = pd.DataFrame(st.session_state.pos_cart)
+            st.dataframe(
+                cart_df[["Item", "Quantity", "Price_BWP", "Total_Price"]],
+                use_container_width=True,
+                column_config={
+                    "Price_BWP": st.column_config.NumberColumn("Unit Price", format="BWP %.2f"),
+                    "Total_Price": st.column_config.NumberColumn("Subtotal", format="BWP %.2f"),
                 }
-                st.session_state.sales_history = pd.concat([st.session_state.sales_history, pd.DataFrame([new_sale])], ignore_index=True)
-                st.success(f"Sale recorded successfully! Deducted {sale_qty} x {selected_item} from stock.")
+            )
+            
+            cart_total_price = cart_df["Total_Price"].sum()
+            cart_total_cost = cart_df["Total_Cost"].sum()
+            cart_profit = cart_total_price - cart_total_cost
+            
+            st.markdown(f"**Total Revenue:** `BWP {cart_total_price:.2f}`")
+            st.markdown(f"**Estimated Margin:** `BWP {cart_profit:.2f}`")
+            
+            c_clear, c_checkout = st.columns([1, 2])
+            with c_clear:
+                if st.button("🗑️ Clear Cart", use_container_width=True):
+                    st.session_state.pos_cart = []
+                    st.rerun()
+                    
+            with c_checkout:
+                if st.button("✅ Complete Order", type="primary", use_container_width=True):
+                    # Process each item in cart
+                    for cart_item in st.session_state.pos_cart:
+                        # Deduct inventory
+                        st.session_state.inventory.loc[
+                            st.session_state.inventory["Item"] == cart_item["Item"], "Quantity"
+                        ] -= cart_item["Quantity"]
+                        
+                        # Append to sales history
+                        new_sale = {
+                            "Date": sale_date,
+                            "Item": cart_item["Item"],
+                            "Quantity": cart_item["Quantity"],
+                            "Price_BWP": cart_item["Price_BWP"],
+                            "Total_BWP": cart_item["Total_Price"],
+                            "Cost_BWP": cart_item["Total_Cost"],
+                            "Profit_BWP": cart_item["Total_Price"] - cart_item["Total_Cost"],
+                            "Payment_Method": payment_method
+                        }
+                        st.session_state.sales_history = pd.concat(
+                            [st.session_state.sales_history, pd.DataFrame([new_sale])], 
+                            ignore_index=True
+                        )
+                    
+                    st.session_state.pos_cart = []
+                    st.success(f"Order processed successfully! Recorded {len(cart_df)} line items under {payment_method}.")
+                    st.rerun()
 
 # ==========================================
 # MODULE 2: INVENTORY LIST
