@@ -117,6 +117,25 @@ if "expenses" not in st.session_state:
     st.session_state.expenses = pd.DataFrame(sample_expenses)
 
 # ==========================================
+# SIDEBAR NAVIGATION
+# ==========================================
+st.sidebar.image("https://img.icons8.com/color/96/plant-under-sun.png", width=64)
+st.sidebar.title("Royal Vine POS")
+st.sidebar.caption("Sales & Inventory Management System")
+
+menu = [
+    "🛒 Record Sale",
+    "📦 Inventory List",
+    "🚚 Stock Refill",
+    "💸 Expenses & Operational Costs",
+    "📊 Weekly & Monthly Insights",
+    "📜 Transaction History",
+    "🚀 Deploy to GitHub & Streamlit"
+]
+
+choice = st.sidebar.radio("Navigation Menu", menu)
+
+# ==========================================
 # MODULE 1: RECORD SALE (MULTI-ITEM CART)
 # ==========================================
 if choice == "🛒 Record Sale":
