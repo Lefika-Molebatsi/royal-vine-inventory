@@ -118,10 +118,8 @@ PAYMENT_METHODS = [
     "Other"
 ]
 
-# Initialize and Load Persistent Data
-if "data_loaded" not in st.session_state:
-    load_data()
-    st.session_state.data_loaded = True
+# Ensure data files are created and loaded cleanly into session_state on every run
+load_data()
 
 # Cart state for multi-item checkout
 if "pos_cart" not in st.session_state:
@@ -233,14 +231,15 @@ if choice == "🛒 Record Sale":
             with c_checkout:
                 if st.button("✅ Complete Order", type="primary", use_container_width=True):
                     # Process each item in cart
+                    new_sales_rows = []
                     for cart_item in st.session_state.pos_cart:
                         # Deduct inventory
                         st.session_state.inventory.loc[
                             st.session_state.inventory["Item"] == cart_item["Item"], "Quantity"
                         ] -= cart_item["Quantity"]
                         
-                        # Append to sales history
-                        new_sale = {
+                        # Build sale record
+                        new_sales_rows.append({
                             "Date": str(sale_date),
                             "Item": cart_item["Item"],
                             "Quantity": cart_item["Quantity"],
@@ -249,11 +248,12 @@ if choice == "🛒 Record Sale":
                             "Cost_BWP": cart_item["Total_Cost"],
                             "Profit_BWP": cart_item["Total_Price"] - cart_item["Total_Cost"],
                             "Payment_Method": payment_method
-                        }
-                        st.session_state.sales_history = pd.concat(
-                            [st.session_state.sales_history, pd.DataFrame([new_sale])], 
-                            ignore_index=True
-                        )
+                        })
+                    
+                    st.session_state.sales_history = pd.concat(
+                        [st.session_state.sales_history, pd.DataFrame(new_sales_rows)], 
+                        ignore_index=True
+                    )
                     
                     # Permanently persist sales and inventory updates to CSV files
                     save_all_data()
@@ -366,6 +366,7 @@ elif choice == "💸 Expenses & Operational Costs":
             st.session_state.expenses = pd.concat([st.session_state.expenses, pd.DataFrame([new_exp])], ignore_index=True)
             save_all_data()
             st.success("Expense recorded & saved permanently!")
+            st.rerun()
             
     with col_t:
         st.markdown("### Expense Ledger")
@@ -463,7 +464,25 @@ elif choice == "📊 Weekly & Monthly Insights":
 # ==========================================
 elif choice == "📜 Transaction History":
     st.subheader("Sales Ledger & Log History")
-    st.dataframe(st.session_state.sales_history, use_container_width=True)
+    
+    # Reload fresh data directly from disk to ensure ledger display matches disk state
+    if os.path.exists(SALES_FILE):
+        st.session_state.sales_history = pd.read_csv(SALES_FILE)
+        
+    if not st.session_state.sales_history.empty:
+        st.dataframe(st.session_state.sales_history, use_container_width=True)
+        
+        # Download option
+        csv_data = st.session_state.sales_history.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Export Sales History (CSV)",
+            data=csv_data,
+            file_name="royal_vine_sales_history.csv",
+            mime="text/csv"
+        )
+    else:
+        st.info("No sales transactions recorded yet.")
+
     
     # Download option
     csv_data = st.session_state.sales_history.to_csv(index=False).encode('utf-8')
