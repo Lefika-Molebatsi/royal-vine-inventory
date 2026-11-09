@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import os
 
 # ==========================================
 # PAGE CONFIGURATION
@@ -36,8 +37,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# INITIAL SAMPLE DATA FROM PROVIDED IMAGE
+# PERSISTENT DATA STORAGE ENGINE (CSV)
 # ==========================================
+DATA_DIR = "data"
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+INV_FILE = os.path.join(DATA_DIR, "inventory.csv")
+SALES_FILE = os.path.join(DATA_DIR, "sales.csv")
+REFILLS_FILE = os.path.join(DATA_DIR, "refills.csv")
+EXPENSES_FILE = os.path.join(DATA_DIR, "expenses.csv")
+
 INITIAL_INVENTORY = [
     {"Item": "Mangoes TA", "Quantity": 41, "Price_BWP": 120.0, "Cost_BWP": 70.0},
     {"Item": "Mangoes Keitt", "Quantity": 40, "Price_BWP": 120.0, "Cost_BWP": 70.0},
@@ -76,6 +86,27 @@ INITIAL_INVENTORY = [
     {"Item": "Plum", "Quantity": 5, "Price_BWP": 180.0, "Cost_BWP": 105.0}
 ]
 
+def load_data():
+    if not os.path.exists(INV_FILE):
+        pd.DataFrame(INITIAL_INVENTORY).to_csv(INV_FILE, index=False)
+    if not os.path.exists(SALES_FILE):
+        pd.DataFrame(columns=["Date", "Item", "Quantity", "Price_BWP", "Total_BWP", "Cost_BWP", "Profit_BWP", "Payment_Method"]).to_csv(SALES_FILE, index=False)
+    if not os.path.exists(REFILLS_FILE):
+        pd.DataFrame(columns=["Date", "Item", "Quantity_Added", "Unit_Cost_BWP", "Notes"]).to_csv(REFILLS_FILE, index=False)
+    if not os.path.exists(EXPENSES_FILE):
+        pd.DataFrame(columns=["Date", "Category", "Amount_BWP", "Notes"]).to_csv(EXPENSES_FILE, index=False)
+
+    st.session_state.inventory = pd.read_csv(INV_FILE)
+    st.session_state.sales_history = pd.read_csv(SALES_FILE)
+    st.session_state.refills = pd.read_csv(REFILLS_FILE)
+    st.session_state.expenses = pd.read_csv(EXPENSES_FILE)
+
+def save_all_data():
+    st.session_state.inventory.to_csv(INV_FILE, index=False)
+    st.session_state.sales_history.to_csv(SALES_FILE, index=False)
+    st.session_state.refills.to_csv(REFILLS_FILE, index=False)
+    st.session_state.expenses.to_csv(EXPENSES_FILE, index=False)
+
 PAYMENT_METHODS = [
     "Cash",
     "Pay2Cell (76097648)",
@@ -87,34 +118,14 @@ PAYMENT_METHODS = [
     "Other"
 ]
 
-# Initialize Session States
-if "inventory" not in st.session_state:
-    st.session_state.inventory = pd.DataFrame(INITIAL_INVENTORY)
+# Initialize and Load Persistent Data
+if "data_loaded" not in st.session_state:
+    load_data()
+    st.session_state.data_loaded = True
 
 # Cart state for multi-item checkout
 if "pos_cart" not in st.session_state:
     st.session_state.pos_cart = []
-
-if "sales_history" not in st.session_state:
-    # Pre-populating sample sales data across different weeks for demonstration
-    sample_sales = [
-        {"Date": datetime.date(2026, 11, 2), "Item": "Mangoes TA", "Quantity": 5, "Price_BWP": 120.0, "Total_BWP": 600.0, "Cost_BWP": 350.0, "Profit_BWP": 250.0, "Payment_Method": "Pay2Cell (76097648)"},
-        {"Date": datetime.date(2026, 11, 6), "Item": "Royal Palm", "Quantity": 2, "Price_BWP": 240.0, "Total_BWP": 480.0, "Cost_BWP": 280.0, "Profit_BWP": 200.0, "Payment_Method": "Orange Money (72707255)"},
-        {"Date": datetime.date(2026, 11, 10), "Item": "Blueberries", "Quantity": 4, "Price_BWP": 140.0, "Total_BWP": 560.0, "Cost_BWP": 320.0, "Profit_BWP": 240.0, "Payment_Method": "Cash"},
-        {"Date": datetime.date(2026, 11, 18), "Item": "Lapin Cherry", "Quantity": 1, "Price_BWP": 400.0, "Total_BWP": 400.0, "Cost_BWP": 250.0, "Profit_BWP": 150.0, "Payment_Method": "MyZaka (74615100)"},
-        {"Date": datetime.date(2026, 11, 25), "Item": "Avocado", "Quantity": 3, "Price_BWP": 250.0, "Total_BWP": 750.0, "Cost_BWP": 450.0, "Profit_BWP": 300.0, "Payment_Method": "Cash"}
-    ]
-    st.session_state.sales_history = pd.DataFrame(sample_sales)
-
-if "refills" not in st.session_state:
-    st.session_state.refills = pd.DataFrame(columns=["Date", "Item", "Quantity_Added", "Unit_Cost_BWP", "Notes"])
-
-if "expenses" not in st.session_state:
-    sample_expenses = [
-        {"Date": datetime.date(2026, 11, 3), "Category": "Transport / Delivery", "Amount_BWP": 250.0, "Notes": "Stock transport from supplier"},
-        {"Date": datetime.date(2026, 11, 15), "Category": "Fertilizer / Soil", "Amount_BWP": 180.0, "Notes": "Organic potting soil"}
-    ]
-    st.session_state.expenses = pd.DataFrame(sample_expenses)
 
 # ==========================================
 # SIDEBAR NAVIGATION
@@ -230,7 +241,7 @@ if choice == "🛒 Record Sale":
                         
                         # Append to sales history
                         new_sale = {
-                            "Date": sale_date,
+                            "Date": str(sale_date),
                             "Item": cart_item["Item"],
                             "Quantity": cart_item["Quantity"],
                             "Price_BWP": cart_item["Price_BWP"],
@@ -244,8 +255,10 @@ if choice == "🛒 Record Sale":
                             ignore_index=True
                         )
                     
+                    # Permanently persist sales and inventory updates to CSV files
+                    save_all_data()
                     st.session_state.pos_cart = []
-                    st.success(f"Order processed successfully! Recorded {len(cart_df)} line items under {payment_method}.")
+                    st.success(f"Order processed & saved permanently! Recorded {len(cart_df)} items under {payment_method}.")
                     st.rerun()
 
 # ==========================================
@@ -292,6 +305,7 @@ elif choice == "📦 Inventory List":
             else:
                 new_row = {"Item": new_item.strip(), "Quantity": new_qty, "Price_BWP": new_price, "Cost_BWP": new_cost}
                 st.session_state.inventory = pd.concat([st.session_state.inventory, pd.DataFrame([new_row])], ignore_index=True)
+                save_all_data()
                 st.success(f"Added {new_item} to catalog!")
                 st.rerun()
 
@@ -317,21 +331,15 @@ elif choice == "🚚 Stock Refill":
             
             # Log refill entry
             refill_entry = {
-                "Date": refill_date,
+                "Date": str(refill_date),
                 "Item": item_to_refill,
                 "Quantity_Added": qty_to_add,
                 "Unit_Cost_BWP": unit_cost,
                 "Notes": refill_notes
             }
             st.session_state.refills = pd.concat([st.session_state.refills, pd.DataFrame([refill_entry])], ignore_index=True)
-            st.success(f"Successfully added {qty_to_add} units of {item_to_refill} to stock!")
-
-    with col2:
-        st.markdown("### Recent Refill Logs")
-        if not st.session_state.refills.empty:
-            st.dataframe(st.session_state.refills.tail(5), use_container_width=True)
-        else:
-            st.info("No stock refills logged yet.")
+            save_all_data()
+            st.success(f"Successfully saved refill of {qty_to_add} units of {item_to_refill}!")
 
 # ==========================================
 # MODULE 4: EXPENSES & OPERATIONAL COSTS
@@ -350,13 +358,14 @@ elif choice == "💸 Expenses & Operational Costs":
         
         if st.button("💾 Record Expense"):
             new_exp = {
-                "Date": exp_date,
+                "Date": str(exp_date),
                 "Category": exp_category,
                 "Amount_BWP": exp_amount,
                 "Notes": exp_notes
             }
             st.session_state.expenses = pd.concat([st.session_state.expenses, pd.DataFrame([new_exp])], ignore_index=True)
-            st.success("Expense recorded successfully!")
+            save_all_data()
+            st.success("Expense recorded & saved permanently!")
             
     with col_t:
         st.markdown("### Expense Ledger")
