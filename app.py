@@ -92,9 +92,12 @@ SAMPLE_INVENTORY = [
 
 PAYMENT_METHODS = [
     "Cash",
-    "Pay2Cell (76097648 or 74615100)",
-    "Orange Money (72707255 or 72796888)",
-    "MyZaka (74615100 or 76097648)",
+    "Pay2Cell (76097648)",
+    "Pay2Cell (74615100)",
+    "Orange Money (72707255)",
+    "Orange Money (72796888)",
+    "MyZaka (74615100)",
+    "MyZaka (76097648)",
     "Other"
 ]
 
