@@ -4,160 +4,203 @@ import datetime
 import os
 
 # ==========================================
-# PAGE CONFIGURATION
+# APP CONFIGURATION & STYLING
 # ==========================================
 st.set_page_config(
     page_title="Royal Vine - Sales & Inventory System",
     page_icon="🌿",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Custom Styling
+# Custom CSS for polished interface
 st.markdown("""
-    <style>
+<style>
     .main-header {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #1b4332;
-        margin-bottom: 0.2rem;
+        color: #2E7D32;
+        margin-bottom: 0px;
     }
     .sub-header {
         font-size: 1rem;
-        color: #40916c;
-        margin-bottom: 1.5rem;
+        color: #555555;
+        margin-bottom: 20px;
+    }
+    .stButton>button {
+        border-radius: 8px;
     }
     .metric-card {
         background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        text-align: center;
+        border-left: 5px solid #2E7D32;
+        padding: 15px;
+        border-radius: 8px;
     }
-    </style>
+</style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# PERSISTENT DATA STORAGE ENGINE (CSV)
-# ==========================================
+# Create data storage directory if it doesn't exist
 DATA_DIR = "data"
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
-INV_FILE = os.path.join(DATA_DIR, "inventory.csv")
+INVENTORY_FILE = os.path.join(DATA_DIR, "inventory.csv")
 SALES_FILE = os.path.join(DATA_DIR, "sales.csv")
 REFILLS_FILE = os.path.join(DATA_DIR, "refills.csv")
 EXPENSES_FILE = os.path.join(DATA_DIR, "expenses.csv")
 
-INITIAL_INVENTORY = [
+# ==========================================
+# INITIAL SAMPLE DATA FROM YOUR IMAGE
+# ==========================================
+SAMPLE_INVENTORY = [
     {"Item": "Mangoes TA", "Quantity": 41, "Price_BWP": 120.0, "Cost_BWP": 70.0},
     {"Item": "Mangoes Keitt", "Quantity": 40, "Price_BWP": 120.0, "Cost_BWP": 70.0},
-    {"Item": "Skyrocket", "Quantity": 4, "Price_BWP": 180.0, "Cost_BWP": 110.0},
+    {"Item": "Skyrocket", "Quantity": 4, "Price_BWP": 180.0, "Cost_BWP": 100.0},
     {"Item": "Almonds", "Quantity": 1, "Price_BWP": 180.0, "Cost_BWP": 110.0},
     {"Item": "Bamboo 10L", "Quantity": 9, "Price_BWP": 150.0, "Cost_BWP": 90.0},
     {"Item": "Bamboo 5L", "Quantity": 14, "Price_BWP": 100.0, "Cost_BWP": 60.0},
     {"Item": "Pear", "Quantity": 29, "Price_BWP": 175.0, "Cost_BWP": 100.0},
-    {"Item": "Apples Anna", "Quantity": 0, "Price_BWP": 175.0, "Cost_BWP": 100.0},
+    {"Item": "Apples Anna", "Quantity": 15, "Price_BWP": 175.0, "Cost_BWP": 100.0},
     {"Item": "Apples Golden Crest", "Quantity": 10, "Price_BWP": 175.0, "Cost_BWP": 100.0},
     {"Item": "Apples Gran Smth", "Quantity": 10, "Price_BWP": 175.0, "Cost_BWP": 100.0},
-    {"Item": "Nectarine", "Quantity": 5, "Price_BWP": 180.0, "Cost_BWP": 110.0},
-    {"Item": "Fig", "Quantity": 6, "Price_BWP": 160.0, "Cost_BWP": 95.0},
-    {"Item": "Peach", "Quantity": 7, "Price_BWP": 180.0, "Cost_BWP": 110.0},
+    {"Item": "Nectarine", "Quantity": 5, "Price_BWP": 180.0, "Cost_BWP": 105.0},
+    {"Item": "Fig", "Quantity": 6, "Price_BWP": 160.0, "Cost_BWP": 90.0},
+    {"Item": "Peach", "Quantity": 7, "Price_BWP": 180.0, "Cost_BWP": 100.0},
     {"Item": "Blueberries", "Quantity": 50, "Price_BWP": 140.0, "Cost_BWP": 80.0},
     {"Item": "Kiwi Male", "Quantity": 5, "Price_BWP": 140.0, "Cost_BWP": 80.0},
-    {"Item": "Kiwi HayW female", "Quantity": 5, "Price_BWP": 140.0, "Cost_BWP": 80.0},
+    {"Item": "Kiwi HayW femal", "Quantity": 5, "Price_BWP": 140.0, "Cost_BWP": 80.0},
     {"Item": "Avocado", "Quantity": 20, "Price_BWP": 250.0, "Cost_BWP": 150.0},
     {"Item": "Coffee", "Quantity": 8, "Price_BWP": 150.0, "Cost_BWP": 90.0},
     {"Item": "Litchi", "Quantity": 4, "Price_BWP": 170.0, "Cost_BWP": 100.0},
     {"Item": "Strawberry", "Quantity": 10, "Price_BWP": 60.0, "Cost_BWP": 35.0},
     {"Item": "Grapes Crimson s", "Quantity": 5, "Price_BWP": 150.0, "Cost_BWP": 90.0},
-    {"Item": "Guava Lucknow w", "Quantity": 8, "Price_BWP": 150.0, "Cost_BWP": 90.0},
+    {"Item": "Guava Lucknow v", "Quantity": 8, "Price_BWP": 150.0, "Cost_BWP": 90.0},
     {"Item": "Banana", "Quantity": 15, "Price_BWP": 100.0, "Cost_BWP": 60.0},
-    {"Item": "Olives Mission", "Quantity": 5, "Price_BWP": 180.0, "Cost_BWP": 105.0},
-    {"Item": "Olives Frantoio", "Quantity": 6, "Price_BWP": 180.0, "Cost_BWP": 105.0},
+    {"Item": "Olives Mission", "Quantity": 5, "Price_BWP": 180.0, "Cost_BWP": 100.0},
+    {"Item": "Olives Frantoio", "Quantity": 6, "Price_BWP": 180.0, "Cost_BWP": 100.0},
     {"Item": "Grapes:Red Globe", "Quantity": 7, "Price_BWP": 150.0, "Cost_BWP": 90.0},
     {"Item": "Pomegranate", "Quantity": 8, "Price_BWP": 150.0, "Cost_BWP": 90.0},
-    {"Item": "Macadamia", "Quantity": 8, "Price_BWP": 180.0, "Cost_BWP": 110.0},
-    {"Item": "Walnut", "Quantity": 22, "Price_BWP": 180.0, "Cost_BWP": 110.0},
+    {"Item": "Macadamia", "Quantity": 8, "Price_BWP": 180.0, "Cost_BWP": 100.0},
+    {"Item": "Walnut", "Quantity": 22, "Price_BWP": 180.0, "Cost_BWP": 100.0},
     {"Item": "Cocos Palm 10L", "Quantity": 9, "Price_BWP": 240.0, "Cost_BWP": 140.0},
     {"Item": "Revoluta 5L", "Quantity": 8, "Price_BWP": 80.0, "Cost_BWP": 45.0},
     {"Item": "Royal Palm", "Quantity": 89, "Price_BWP": 240.0, "Cost_BWP": 140.0},
-    {"Item": "Lapin Cherry", "Quantity": 10, "Price_BWP": 400.0, "Cost_BWP": 250.0},
+    {"Item": "Lapin Cherry", "Quantity": 10, "Price_BWP": 400.0, "Cost_BWP": 230.0},
     {"Item": "Cupressus Goldcrest", "Quantity": 8, "Price_BWP": 220.0, "Cost_BWP": 130.0},
-    {"Item": "Plum", "Quantity": 5, "Price_BWP": 180.0, "Cost_BWP": 105.0}
+    {"Item": "Plum", "Quantity": 5, "Price_BWP": 180.0, "Cost_BWP": 100.0}
 ]
 
-def load_data():
-    if not os.path.exists(INV_FILE):
-        pd.DataFrame(INITIAL_INVENTORY).to_csv(INV_FILE, index=False)
-    if not os.path.exists(SALES_FILE):
-        pd.DataFrame(columns=["Date", "Item", "Quantity", "Price_BWP", "Total_BWP", "Cost_BWP", "Profit_BWP", "Payment_Method"]).to_csv(SALES_FILE, index=False)
-    if not os.path.exists(REFILLS_FILE):
-        pd.DataFrame(columns=["Date", "Item", "Quantity_Added", "Unit_Cost_BWP", "Notes"]).to_csv(REFILLS_FILE, index=False)
-    if not os.path.exists(EXPENSES_FILE):
-        pd.DataFrame(columns=["Date", "Category", "Amount_BWP", "Notes"]).to_csv(EXPENSES_FILE, index=False)
+PAYMENT_METHODS = [
+    "Cash",
+    "Pay2Cell (76097648 or 74615100)",
+    "Orange Money (72707255 or 72796888)",
+    "MyZaka (74615100 or 76097648)",
+    "Other"
+]
 
-    st.session_state.inventory = pd.read_csv(INV_FILE)
-    st.session_state.sales_history = pd.read_csv(SALES_FILE)
-    st.session_state.refills = pd.read_csv(REFILLS_FILE)
-    st.session_state.expenses = pd.read_csv(EXPENSES_FILE)
+# ==========================================
+# FAIL-SAFE PERSISTENT CSV LOAD/SAVE HELPERS
+# ==========================================
+def load_data():
+    """Reads data files from disk or initializes defaults."""
+    # 1. Inventory
+    if os.path.exists(INVENTORY_FILE) and os.path.getsize(INVENTORY_FILE) > 0:
+        st.session_state.inventory = pd.read_csv(INVENTORY_FILE)
+    else:
+        st.session_state.inventory = pd.DataFrame(SAMPLE_INVENTORY)
+        st.session_state.inventory.to_csv(INVENTORY_FILE, index=False)
+        
+    # 2. Sales History
+    if os.path.exists(SALES_FILE) and os.path.getsize(SALES_FILE) > 0:
+        st.session_state.sales_history = pd.read_csv(SALES_FILE)
+    else:
+        st.session_state.sales_history = pd.DataFrame(columns=[
+            "Date", "Item", "Quantity", "Price_BWP", "Total_BWP", "Cost_BWP", "Profit_BWP", "Payment_Method"
+        ])
+        st.session_state.sales_history.to_csv(SALES_FILE, index=False)
+        
+    # 3. Refills
+    if os.path.exists(REFILLS_FILE) and os.path.getsize(REFILLS_FILE) > 0:
+        st.session_state.refills = pd.read_csv(REFILLS_FILE)
+    else:
+        st.session_state.refills = pd.DataFrame(columns=[
+            "Date", "Item", "Quantity_Added", "Unit_Cost_BWP", "Notes"
+        ])
+        st.session_state.refills.to_csv(REFILLS_FILE, index=False)
+        
+    # 4. Expenses
+    if os.path.exists(EXPENSES_FILE) and os.path.getsize(EXPENSES_FILE) > 0:
+        st.session_state.expenses = pd.read_csv(EXPENSES_FILE)
+    else:
+        st.session_state.expenses = pd.DataFrame(columns=[
+            "Date", "Category", "Amount_BWP", "Notes"
+        ])
+        st.session_state.expenses.to_csv(EXPENSES_FILE, index=False)
 
 def save_all_data():
-    st.session_state.inventory.to_csv(INV_FILE, index=False)
+    """Writes all active DataFrames directly to disk CSV files."""
+    st.session_state.inventory.to_csv(INVENTORY_FILE, index=False)
     st.session_state.sales_history.to_csv(SALES_FILE, index=False)
     st.session_state.refills.to_csv(REFILLS_FILE, index=False)
     st.session_state.expenses.to_csv(EXPENSES_FILE, index=False)
 
-PAYMENT_METHODS = [
-    "Cash",
-    "Pay2Cell (76097648)",
-    "Pay2Cell (74615100)",
-    "Orange Money (72707255)",
-    "Orange Money (72796888)",
-    "MyZaka (74615100)",
-    "MyZaka (76097648)",
-    "Other"
-]
+# Initialize data on application boot
+if "inventory" not in st.session_state:
+    load_data()
 
-# Ensure data files are created and loaded cleanly into session_state on every run
-load_data()
-
-# Cart state for multi-item checkout
 if "pos_cart" not in st.session_state:
     st.session_state.pos_cart = []
+
+# Synchronize disk state on every page refresh to prevent loss
+load_data()
 
 # ==========================================
 # SIDEBAR NAVIGATION
 # ==========================================
-st.sidebar.image("https://img.icons8.com/color/96/plant-under-sun.png", width=64)
-st.sidebar.title("Royal Vine POS")
-st.sidebar.caption("Sales & Inventory Management System")
+st.sidebar.image("https://img.icons8.com/color/96/botanical.png", width=70)
+st.sidebar.title("Royal Vine Portal")
+st.sidebar.caption("Sales & Inventory System")
 
-menu = [
-    "🛒 Record Sale",
-    "📦 Inventory List",
-    "🚚 Stock Refill",
-    "💸 Expenses & Operational Costs",
-    "📊 Weekly & Monthly Insights",
-    "📜 Transaction History",
-    "🚀 Deploy to GitHub & Streamlit"
-]
+choice = st.sidebar.radio(
+    "Navigation Menu",
+    [
+        "🛒 Record Sale",
+        "📦 Inventory List",
+        "🚚 Stock Refill",
+        "💸 Expenses & Operational Costs",
+        "📊 Weekly & Monthly Insights",
+        "📜 Transaction History",
+        "🚀 Deploy to GitHub & Streamlit"
+    ]
+)
 
-choice = st.sidebar.radio("Navigation Menu", menu)
+st.sidebar.divider()
+st.sidebar.markdown("**Quick Stats**")
+total_items = st.session_state.inventory["Quantity"].sum()
+st.sidebar.metric("Total Plant Stock", f"{total_items} Units")
+
+if st.sidebar.button("🔄 Reload Disk Data"):
+    load_data()
+    st.rerun()
+
+# Header banner
+st.markdown("<p class='main-header'>🌿 Royal Vine Nursery</p>", unsafe_allow_html=True)
+st.markdown("<p class='sub-header'>Sales, Inventory Management & Operational Analytics</p>", unsafe_allow_html=True)
 
 # ==========================================
-# MODULE 1: RECORD SALE (MULTI-ITEM CART)
+# MODULE 1: RECORD SALE (MULTI-ITEM POS CART)
 # ==========================================
 if choice == "🛒 Record Sale":
-    st.subheader("Record New Sale (Multi-Item Order)")
+    st.subheader("Point of Sale (POS) - Multi-Item Checkout")
     
-    col1, col2 = st.columns([1.5, 1])
+    col1, col2 = st.columns([1, 1])
     
     with col1:
         st.markdown("### 1. Add Varieties to Order Cart")
         inv_df = st.session_state.inventory
         item_options = inv_df["Item"].tolist()
         
-        c_item, c_qty, c_btn = st.columns([3, 2, 2])
+        c_item, c_qty = st.columns([3, 2])
         with c_item:
             selected_item = st.selectbox("Select Item Variety", item_options)
             item_row = inv_df[inv_df["Item"] == selected_item].iloc[0]
@@ -169,33 +212,30 @@ if choice == "🛒 Record Sale":
         with c_qty:
             sale_qty = st.number_input("Quantity", min_value=1, max_value=max(1, current_stock), value=1, step=1)
             
-        with c_btn:
-            st.write("") # Alignment spacing
-            st.write("")
-            if st.button("➕ Add to Cart", use_container_width=True):
-                if current_stock < sale_qty:
-                    st.error("Insufficient stock!")
-                else:
-                    # Check if item already in cart
-                    existing_item = next((item for item in st.session_state.pos_cart if item["Item"] == selected_item), None)
-                    if existing_item:
-                        if (existing_item["Quantity"] + sale_qty) > current_stock:
-                            st.error(f"Cannot exceed available stock ({current_stock}).")
-                        else:
-                            existing_item["Quantity"] += sale_qty
-                            existing_item["Total_Price"] = existing_item["Quantity"] * item_price
-                            existing_item["Total_Cost"] = existing_item["Quantity"] * item_cost
-                            st.success(f"Updated {selected_item} quantity in cart!")
+        if st.button("➕ Add to Cart", use_container_width=True):
+            if current_stock < sale_qty:
+                st.error("Insufficient stock!")
+            else:
+                # Check if item already in cart
+                existing_item = next((item for item in st.session_state.pos_cart if item["Item"] == selected_item), None)
+                if existing_item:
+                    if (existing_item["Quantity"] + sale_qty) > current_stock:
+                        st.error(f"Cannot exceed available stock ({current_stock}).")
                     else:
-                        st.session_state.pos_cart.append({
-                            "Item": selected_item,
-                            "Quantity": sale_qty,
-                            "Price_BWP": item_price,
-                            "Cost_BWP": item_cost,
-                            "Total_Price": sale_qty * item_price,
-                            "Total_Cost": sale_qty * item_cost
-                        })
-                        st.success(f"Added {selected_item} to cart!")
+                        existing_item["Quantity"] += sale_qty
+                        existing_item["Total_Price"] = existing_item["Quantity"] * item_price
+                        existing_item["Total_Cost"] = existing_item["Quantity"] * item_cost
+                        st.success(f"Updated {selected_item} quantity in cart!")
+                else:
+                    st.session_state.pos_cart.append({
+                        "Item": selected_item,
+                        "Quantity": sale_qty,
+                        "Price_BWP": item_price,
+                        "Cost_BWP": item_cost,
+                        "Total_Price": sale_qty * item_price,
+                        "Total_Cost": sale_qty * item_cost
+                    })
+                    st.success(f"Added {selected_item} to cart!")
 
     with col2:
         st.markdown("### 2. Order Summary & Checkout")
@@ -230,7 +270,6 @@ if choice == "🛒 Record Sale":
                     
             with c_checkout:
                 if st.button("✅ Complete Order", type="primary", use_container_width=True):
-                    # Process each item in cart
                     new_sales_rows = []
                     for cart_item in st.session_state.pos_cart:
                         # Deduct inventory
@@ -255,7 +294,7 @@ if choice == "🛒 Record Sale":
                         ignore_index=True
                     )
                     
-                    # Permanently persist sales and inventory updates to CSV files
+                    # Save updates permanently to disk CSVs
                     save_all_data()
                     st.session_state.pos_cart = []
                     st.success(f"Order processed & saved permanently! Recorded {len(cart_df)} items under {payment_method}.")
@@ -275,7 +314,6 @@ elif choice == "📦 Inventory List":
     if search_query:
         inv_df = inv_df[inv_df["Item"].str.contains(search_query, case=False, na=False)]
         
-    # Highlight low stock items
     st.dataframe(
         inv_df.style.map(
             lambda val: 'background-color: #ffcdd2; color: #b71c1c; font-weight: bold;' if isinstance(val, (int, float)) and val <= 3 else '', 
@@ -393,7 +431,6 @@ elif choice == "📊 Weekly & Monthly Insights":
         sales_df["Date"] = pd.to_datetime(sales_df["Date"])
         sales_df["Day_of_Month"] = sales_df["Date"].dt.day
         
-        # Categorize into Week 1, Week 2, Week 3, Week 4
         def assign_week(day):
             if day <= 7:
                 return "Week 1 (1-7)"
@@ -407,12 +444,10 @@ elif choice == "📊 Weekly & Monthly Insights":
         sales_df["Week_Period"] = sales_df["Day_of_Month"].apply(assign_week)
         
         total_rev = sales_df["Total_BWP"].sum()
-        total_cogs = sales_df["Cost_BWP"].sum()
         gross_profit = sales_df["Profit_BWP"].sum()
         total_overhead = exp_df["Amount_BWP"].sum() if not exp_df.empty else 0.0
         net_profit = gross_profit - total_overhead
         
-        # Executive Summary Metrics
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("Total Revenue", f"BWP {total_rev:.2f}")
         m2.metric("Gross Profit", f"BWP {gross_profit:.2f}")
@@ -422,7 +457,6 @@ elif choice == "📊 Weekly & Monthly Insights":
         
         st.divider()
         
-        # Weekly Sales Summary
         st.markdown("### 📅 Weekly Sales Breakdown (Week 1, 2, 3, 4)")
         weekly_summary = sales_df.groupby("Week_Period").agg(
             Revenue_BWP=("Total_BWP", "sum"),
@@ -439,7 +473,6 @@ elif choice == "📊 Weekly & Monthly Insights":
             
         st.divider()
         
-        # Payment Method Breakdown
         st.markdown("### 💳 Revenue by Payment Channel")
         payment_summary = sales_df.groupby("Payment_Method")["Total_BWP"].sum().reset_index()
         
@@ -451,7 +484,6 @@ elif choice == "📊 Weekly & Monthly Insights":
             
         st.divider()
         
-        # Top Selling Items
         st.markdown("### 🏆 Top Performing Plant Varieties")
         top_items = sales_df.groupby("Item").agg(
             Units_Sold=("Quantity", "sum"),
@@ -466,32 +498,22 @@ elif choice == "📜 Transaction History":
     st.subheader("Sales Ledger & Log History")
     
     # Reload fresh data directly from disk to ensure ledger display matches disk state
-    if os.path.exists(SALES_FILE):
+    if os.path.exists(SALES_FILE) and os.path.getsize(SALES_FILE) > 0:
         st.session_state.sales_history = pd.read_csv(SALES_FILE)
         
     if not st.session_state.sales_history.empty:
         st.dataframe(st.session_state.sales_history, use_container_width=True)
         
-        # Download option
         csv_data = st.session_state.sales_history.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Export Sales History (CSV)",
             data=csv_data,
             file_name="royal_vine_sales_history.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key="export_sales_history_btn"
         )
     else:
         st.info("No sales transactions recorded yet.")
-
-    
-    # Download option
-    csv_data = st.session_state.sales_history.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Export Sales History (CSV)",
-        data=csv_data,
-        file_name="royal_vine_sales_history.csv",
-        mime="text/csv"
-    )
 
 # ==========================================
 # MODULE 7: GITHUB & CLOUD DEPLOYMENT GUIDE
@@ -519,7 +541,7 @@ pandas>=2.0.0""", language="text")
         1. Go to **[GitHub.com](https://github.com)** and log in (or create a free account).
         2. Click the **`+`** icon in the top right corner and select **New repository**.
         3. Name your repository **`royal-vine-inventory`**.
-        4. Choose **Public** (required for free Streamlit hosting) or **Private** (if you have Streamlit Community Team).
+        4. Choose **Public** (required for free Streamlit hosting).
         5. Click **Create repository**.
         6. Upload your `app.py` and `requirements.txt` files directly on GitHub by clicking **Uploading an existing file**.
         """)
@@ -534,6 +556,4 @@ pandas>=2.0.0""", language="text")
            - **Branch:** `main`
            - **Main file path:** `app.py`
         4. Click **Deploy!** 🚀
-        
-        Within 1-2 minutes, your web application will be live at a custom URL (e.g., `royal-vine.streamlit.app`) that works on phones, tablets, and laptops!
         """)
